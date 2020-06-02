@@ -18,7 +18,7 @@
       :class="`${prefixCls}__body-wrapper`"
       @scroll="handleEvent('body', $event)">
       <table-body
-        ref="table-body"
+        ref="tableBody"
         :class="bodyClass">
       </table-body>
     </div>
@@ -48,12 +48,17 @@
     data.forEach((row, index) => {
       const children = row[childrenProp];
       const childrenLen = Object.prototype.toString.call(children).slice(8, -1) === 'Array' ? children.length : 0;
+      if (childrenLen > 0) {
+        isFold = false;
+      } else {
+        isFold = true;
+      }
       bodyData.push({
         _isHover: false,
         _isExpanded: false,
         _isChecked: false,
         _level: level,
-        _isHide: isFold ? level !== 1 : false,
+        _isHide: false,
         _isFold: isFold,
         _childrenLen: childrenLen,
         _normalIndex: index + 1,
@@ -150,6 +155,10 @@
         type: Array,
         default: () => [],
       },
+      lazy: {
+        type: Boolean,
+        default: true,
+      },
       columns: {
         type: Array,
         default: () => [],
@@ -177,6 +186,10 @@
       isFold: {
         type: Boolean,
         default: true,
+      },
+      sign: {
+        type: String,
+        default: null,
       },
       expandType: {
         type: Boolean,
@@ -264,6 +277,16 @@
           }
         }
         return this.$emit(`${type}-${eventType}`, $event);
+      },
+      showChildren(row, rowIndex, data) {
+        this.$refs.tableBody.toggleStatus('Fold', row, rowIndex);
+        const childrenIndex = this.$refs.tableBody.getChildrenIndexAppend(row, rowIndex, data);
+        for (let i = 0; i < childrenIndex.length; i++) {
+          this.$refs.tableBody.toggleStatus('Fold', data[childrenIndex[i]], childrenIndex[i], row._isFold);
+        }
+        for (let i = 0; i < childrenIndex.length; i++) {
+          this.$refs.tableBody.toggleStatus('Hide', data[childrenIndex[i]], childrenIndex[i], !row._isFold);
+        }
       },
       // computedWidth, computedHeight, tableColumns
       measure() {

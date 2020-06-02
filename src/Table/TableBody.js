@@ -48,6 +48,34 @@ export default {
       }
       return childrenIndex;
     },
+    getChildrenIndexAppend(row, parentIndex, data, careFold = true) {
+      let parentLevel = row._level
+      let childrenIndex = [];
+      for (let i = parentIndex + 1; i < data.length; i++) {
+        if (data[i]._level <= parentLevel) break;
+        if (row._isFold) {
+          if (data[i]._level - 1 === parentLevel) {
+            childrenIndex.push(i);
+          }
+        } else {
+          childrenIndex.push(i);
+        }
+      }
+      const len = childrenIndex.length; // important!!!
+      if (len > 0) {
+        for (let i = 0; i < len; i++) {
+          const childData = data[childrenIndex[i]];
+          if (
+            childData._childrenLen &&
+            (!careFold || (careFold && !childData._isFold))
+          ) {
+            childrenIndex = childrenIndex.concat(
+              this.getChildrenIndex(childData._level, childrenIndex[i], careFold));
+          }
+        }
+      }
+      return childrenIndex;
+    },
     handleEvent($event, type, data, others) {
       const certainType = this.validateType(type, ['cell', 'row', 'checkbox', 'icon'], 'handleEvent');
       const eventType = $event ? $event.type : '';
@@ -68,12 +96,14 @@ export default {
       // Tree's icon
       if (certainType.icon) {
         $event.stopPropagation();
-        this.toggleStatus('Fold', row, rowIndex);
-        const childrenIndex = this.getChildrenIndex(row._level, rowIndex);
-        for (let i = 0; i < childrenIndex.length; i++) {
-          this.toggleStatus('Hide', latestData[childrenIndex[i]], childrenIndex[i]);
+        if (!this.table.lazy) {
+          this.toggleStatus('Fold', row, rowIndex);
+          const childrenIndex = this.getChildrenIndex(row._level, rowIndex);
+          for (let i = 0; i < childrenIndex.length; i++) {
+            this.toggleStatus('Hide', latestData[childrenIndex[i]], childrenIndex[i]);
+          }
         }
-        return this.table.$emit('tree-icon-click', latestData[rowIndex], column, columnIndex, $event);
+        return this.table.$emit('tree-icon-click', row, rowIndex, this.table.bodyData);
       }
       if (certainType.cell && eventType === 'click') {
         // 点击扩展单元格
@@ -209,20 +239,35 @@ export default {
           </Checkbox>;
       }
       // Tree's firstProp
-      if (this.table.treeType && this.table.firstProp === column.prop) {
+      if (this.table.treeType && this.table.firstProp === column.prop && this.table.lazy) {
         return <span
           class={ `${this.prefixCls}--level-${row._level}-cell` }
           style={{
             marginLeft: `${(row._level - 1) * 24}px`,
             paddingLeft: row._childrenLen === 0 ? '20px' : '',
           }}>
-            { row._childrenLen > 0 &&
+            { (row[this.table.sign] === undefined || row[this.table.sign] === null || row[this.table.sign] === true) &&
               <i
                 class={ `${this.prefixCls}--tree-icon zk-icon zk-icon-${row._isFold ? 'plus' : 'minus'}-square-o`}
                 on-click={ $event => this.handleEvent($event, 'icon', { row, rowIndex, column, columnIndex }, { isFold: row._isFold }) }></i>
             }
             { row[column.prop] ? row[column.prop] : '' }
         </span>;
+      } else if (this.table.treeType && this.table.firstProp === column.prop ) {
+        return <span
+      class={ `${this.prefixCls}--level-${row._level}-cell` }
+        style={{
+          marginLeft: `${(row._level - 1) * 24}px`,
+            paddingLeft: row._childrenLen === 0 ? '20px' : '',
+        }}>
+        { row._childrenLen > 0 &&
+        <i
+        class={ `${this.prefixCls}--tree-icon zk-icon zk-icon-${row._isFold ? 'plus' : 'minus'}-square-o`}
+          on-click={ $event => this.handleEvent($event, 'icon', { row, rowIndex, column, columnIndex }, { isFold: row._isFold }) }></i>
+        }
+        { (column.type === undefined || column.type === 'custom') && row[column.prop] ? row[column.prop] : '' }
+        { ((column.type === 'template') || (column.type === 'template')) && this.table.$scopedSlots[column.template]({ row, rowIndex, column, columnIndex })}
+      </span>;
       }
       // TreeType children's index
       if (this.table.showIndex && this.table.treeType && column.prop === '_normalIndex' && row._level > 1) {
@@ -239,8 +284,7 @@ export default {
     }
 
     // Template
-    return (
-      <table cellspacing="0" cellpadding="0" border="0" class={ `${this.prefixCls}__body` }>
+    return (<table cellspacing="0" cellpadding="0" border="0" class={ `${this.prefixCls}__body` }>
         <colgroup>
           { this.table.tableColumns.map(column =>
             <col width={ column.computedWidth || column.minWidth || column.width }></col>)

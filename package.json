@@ -1,5 +1,5 @@
 {
-  "name": "vue-table-with-tree-grid",
+  "name": "vue-table-with-tree-grid-backend",
   "version": "0.2.4",
   "description": "A table (with tree-grid) component for Vue.js 2.0. (Its style extends iView)",
   "keywords": [
@@ -11,10 +11,12 @@
   ],
   "author": "GaoQi <taki.gaoqi@outlook.com>",
   "homepage": "https://github.com/MisterTaki/vue-table-with-tree-gird",
-  "bugs": "https://github.com/MisterTaki/vue-table-with-tree-gird/issues",
+  "bugs": {
+    "url": "https://github.com/MisterTaki/vue-table-with-tree-gird/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MisterTaki/vue-table-with-tree-gird"
+    "url": "git+https://github.com/MisterTaki/vue-table-with-tree-gird.git"
   },
   "main": "lib/vue-table-with-tree-grid.js",
   "files": [
@@ -81,5 +83,9 @@
     "> 1%",
     "last 2 versions",
     "not ie < 9"
-  ]
+  ],
+  "directories": {
+    "example": "example",
+    "lib": "lib"
+  }
 }

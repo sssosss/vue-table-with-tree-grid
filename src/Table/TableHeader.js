@@ -71,11 +71,20 @@ export default {
         <thead>
           <tr class={ `${this.prefixCls}__header-row` }>
             { this.table.tableColumns.map((column, columnIndex) =>
-                <th class={ getClassName.call(this, 'cell', column) }>
+            {
+              if (column.columnType!=='template') {
+                return (<th class={ getClassName.call(this, 'cell', column) }>
                   <div class={ getClassName.call(this, 'inner', column) }>
-                    { renderLabel.call(this, column, columnIndex) }
+                  { renderLabel.call(this, column, columnIndex) }
                   </div>
-                </th>)
+                  </th>)
+              }
+              else {
+                 return  (<th class={ getClassName.call(this, 'cell', column) }>
+                  {this.table.$scopedSlots[column.columnTemplate]({ column, columnIndex })}
+                  </th>)
+            }
+            })
             }
           </tr>
         </thead>
